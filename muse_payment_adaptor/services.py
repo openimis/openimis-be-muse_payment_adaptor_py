@@ -1,16 +1,14 @@
 import logging
-import warnings
+
+from core.services import BaseService
+from muse_payment_adaptor.models import HFBankInformation
+from muse_payment_adaptor.validation import HFBankInformationValidation
 
 logger = logging.getLogger(__name__)
 
-# Remove this code when implementing services
-warnings.warn("The example code in service is still present.")
 
+class HFBankInformationService(BaseService):
+    OBJECT_TYPE = HFBankInformation
 
-def example_service_function_job():
-    pass
-
-
-class ExampleService:
-    def example_service_method_job(self):
-        pass
+    def __init__(self, user, validation_class=HFBankInformationValidation):
+        super().__init__(user, validation_class)
