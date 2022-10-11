@@ -1,1 +1,1 @@
-from .apps import MusePaymentAdaptorConfig
+default_app_config = 'muse_payment_adaptor.apps.MusePaymentAdaptorConfig'
