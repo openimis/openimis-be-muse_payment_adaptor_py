@@ -6,7 +6,11 @@ from django.utils.functional import classproperty
 
 DEFAULT_CONFIG = {
     'certificates_path': 'certificates',  # Relative path from `openimis-be` where certificates are stored
-    'digital_signature': 'digital_signature.cert'  # Filename, relative path from certificates_path directory
+    'digital_signature': 'digital_signature.cert',  # Filename, relative path from certificates_path directory
+    'gql_hf_bank_info_search_perms': [],
+    'gql_hf_bank_info_create_perms': [],
+    'gql_hf_bank_info_update_perms': [],
+    'gql_hf_bank_info_delete_perms': [],
 }
 
 
@@ -15,6 +19,11 @@ class MusePaymentAdaptorConfig(AppConfig):
 
     certificates_path = 'certificates'
     digital_signature = 'digital_signature.cert'
+
+    gql_hf_bank_info_search_perms = None
+    gql_hf_bank_info_create_perms = None
+    gql_hf_bank_info_update_perms = None
+    gql_hf_bank_info_delete_perms = None
 
     @classproperty
     def certificates(self):
@@ -39,8 +48,16 @@ class MusePaymentAdaptorConfig(AppConfig):
             CoreConfig.fields_controls_eo['phone'] = 'M'
 
         cfg = ModuleConfiguration.get_or_default(self.name, DEFAULT_CONFIG)
-        MusePaymentAdaptorConfig.certificates_path = cfg['certificates_path']
-        MusePaymentAdaptorConfig.digital_signature = cfg['digital_signature']
+        self.__load_config_config(cfg)
+
+    @classmethod
+    def __load_config_config(cls, cfg):
+        """
+        Load all config fields that match current AppConfig class fields, all custom fields have to be loaded separately
+        """
+        for field in cfg:
+            if hasattr(MusePaymentAdaptorConfig, field):
+                setattr(MusePaymentAdaptorConfig, field, cfg[field])
 
     @classmethod
     def __load_certificates(cls):

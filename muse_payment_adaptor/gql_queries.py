@@ -17,6 +17,11 @@ class HFBankInformationGQLType(DjangoObjectType):
             "bank_account": ["exact"],
             "bank_name": ["exact"],
             "account_name": ["exact"],
-            "bic": ["exact"]
+            "bic": ["exact"],
+
+            "date_created": ["exact", "lt", "lte", "gt", "gte"],
+            "date_updated": ["exact", "lt", "lte", "gt", "gte"],
+            "is_deleted": ["exact"],
+            "version": ["exact"],
         }
         connection_class = ExtendedConnection

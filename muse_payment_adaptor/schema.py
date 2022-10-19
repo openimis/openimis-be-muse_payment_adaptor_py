@@ -1,16 +1,39 @@
 import logging
+from typing import Any
+
 import graphene
+from django.contrib.auth.models import AnonymousUser
+from django.db.models import Q
 from graphene_django.filter import DjangoFilterConnectionField
 
 from core.schema import signal_mutation_module_after_mutating
+from muse_payment_adaptor.apps import MusePaymentAdaptorConfig
 from muse_payment_adaptor.gql_queries import HFBankInformationGQLType
+from muse_payment_adaptor.models import HFBankInformation
 from muse_payment_adaptor.services import HFBankInformationService
+import graphene_django_optimizer as gql_optimizer
 
 logger = logging.getLogger(__name__)
 
 
 class Query(graphene.ObjectType):
     hf_bank_information = DjangoFilterConnectionField(HFBankInformationGQLType)
+
+    def resolve_hf_bank_information(self, info, **kwargs):
+        filters = []
+
+        client_mutation_id = kwargs.get("client_mutation_id", None)
+        if client_mutation_id:
+            filters.append(Q(mutations__mutation__client_mutation_id=client_mutation_id))
+
+        Query._check_permissions(info.context.user)
+        return gql_optimizer.query(HFBankInformation.objects.filter(*filters).all(), info)
+
+    @staticmethod
+    def _check_permissions(user: Any) -> None:
+        if type(user) is AnonymousUser or not user.id or not user.has_perms(
+                MusePaymentAdaptorConfig.gql_hf_bank_info_search_perms):
+            raise PermissionError("Unauthorized")
 
 
 class MuseHFMutationExtension:
@@ -21,15 +44,15 @@ class MuseHFMutationExtension:
     }
 
     @classmethod
-    def extend(cls, sender, **kwargs):
+    def extend(cls, sender, **kwargs) -> list[dict[str, str]]:
         return cls._extensions.get(sender._mutation_class, cls._empty_extension)(kwargs)
 
     @classmethod
-    def _empty_extension(cls, **kwargs):
+    def _empty_extension(cls, **kwargs) -> list[dict[str, str]]:
         return []
 
     @classmethod
-    def _after_create(cls, **kwargs):
+    def _after_create(cls, **kwargs) -> list[dict[str, str]]:
         if kwargs.get('error_messages', []):
             return cls._empty_extension()
 
@@ -44,7 +67,7 @@ class MuseHFMutationExtension:
             return cls._empty_extension()
 
     @classmethod
-    def _after_update(cls, **kwargs):
+    def _after_update(cls, **kwargs) -> list[dict[str, str]]:
         if kwargs.get('error_messages', []):
             return cls._empty_extension()
 
@@ -60,7 +83,7 @@ class MuseHFMutationExtension:
         return cls._parse_result(result)
 
     @classmethod
-    def _after_delete(cls, **kwargs):
+    def _after_delete(cls, **kwargs) -> list[dict[str, str]]:
         if kwargs.get('error_messages', []):
             return cls._empty_extension()
 
@@ -71,13 +94,18 @@ class MuseHFMutationExtension:
         return cls._parse_result(result)
 
     @classmethod
-    def _parse_result(cls, result):
+    def _parse_result(cls, result: dict) -> list[dict[str, str]]:
         if result and not result.get('success', False):
             message = result.get("message", "Unknown")
             details = result.get("details", "No details")
             logger.warning(f'{message}, {details}')
             return [{'message': message, 'detail': details}]
         return []
+
+    @staticmethod
+    def _check_permissions(user, perms) -> None:
+        if type(user) is AnonymousUser or not user.id or not user.has_perms(perms):
+            raise PermissionError("Unauthorized")
 
 
 def bind_signals():
