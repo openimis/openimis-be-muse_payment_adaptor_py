@@ -44,6 +44,8 @@ class PaymentRequestDetails(models.Model):
         db_column="BankBIC", blank=True, null=True, max_length=50)
     amount = models.DecimalField(
         db_column="Amount", blank=True, null=True, max_digits=18, decimal_places=4)
+    payment_channel = models.CharField(
+        db_column="PaymentChannel", blank=True, null=True, max_length=50)
 
     class Meta:
         db_table = "PaymentRequestDetails"
