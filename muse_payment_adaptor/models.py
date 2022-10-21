@@ -10,9 +10,11 @@ class PaymentRequest(models.Model):
     message_id = models.CharField(
         db_column="MessageId", blank=False, null=False, max_length=50)
     payment_type = models.CharField(
-        db_column="PaymentId", blank=True, null=True, max_length=50)
+        db_column="PaymentType", blank=True, null=True, max_length=50)
     reference_no = models.CharField(
         db_column="ReferenceNo", blank=True, null=True, max_length=50)
+    payment_description = models.CharField(
+        db_column="PaymentDescription", blank=True, null=True, max_length=300)
     total_amount = models.DecimalField(
         db_column="TotalAmount", blank=True, null=True, max_digits=18, decimal_places=4)
     no_of_tnx = models.IntegerField(
