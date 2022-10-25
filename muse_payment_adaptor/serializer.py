@@ -1,5 +1,6 @@
-from muse_payment_adaptor.models import PaymentRequest
+from muse_payment_adaptor.models import PaymentRequest, PaymentRequestDetails
 from rest_framework import serializers
+from django.core import serializers as json_serializer
 
 
 class MessageHeader(serializers.Serializer):
@@ -38,3 +39,28 @@ class BulkPaymentMessage(serializers.Serializer):
 
 class PaymentRequestSerializer(serializers.Serializer):
     message = BulkPaymentMessage()
+
+    def create(self, validated_data):
+        header = validated_data["message"]["messageHeader"]
+        summary = validated_data["message"]["paymentSummary"]
+        pay_list = validated_data["message"]["payList"]
+
+        request = PaymentRequest()
+        request.message_id = header["message_id"]
+        request.payment_type = header["payment_type"]
+        request.reference_no = summary["reference_no"]
+        request.total_amount = summary["total_amount"]
+        request.no_of_tnx = summary["no_of_tnx"]
+        request.payment_date = summary["payment_date"]
+        request.payment_description = summary["payment_description"]
+
+        # payment_data = json_serializer.serialize('json', [request])
+        # payment = PaymentRequest.objects.create(**payment_data)
+
+        request.save()
+
+        for payee in pay_list:
+            PaymentRequestDetails.objects.create(
+                payment_request_id=request, **payee)
+
+        return request
