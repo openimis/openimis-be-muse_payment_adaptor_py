@@ -1,4 +1,4 @@
-from muse_payment_adaptor.serializer import PaymentRequestSerializer
+from muse_payment_adaptor.serializer import BulkPaymentResponseSerializer, PaymentRequestSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -21,4 +21,9 @@ def bulk_payment_sub_req_ack(request):
 
 @api_view(['POST'])
 def bulk_payment_sub_resp(request):
-    return Response({"data": request.data})
+    serializer = BulkPaymentResponseSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

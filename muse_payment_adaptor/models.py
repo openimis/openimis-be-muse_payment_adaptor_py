@@ -32,7 +32,7 @@ class PaymentRequest(models.Model):
 
 class PaymentRequestDetails(models.Model):
     id = models.UUIDField(db_column="Id", primary_key=True, default=uuid.uuid4)
-    payment_request_id = models.ForeignKey(
+    payment_request = models.ForeignKey(
         PaymentRequest, models.DO_NOTHING, db_column="PaymentRequestId", blank=True, null=True)
     payee_code = models.CharField(
         db_column="PayeeCode", blank=True, null=True, max_length=10)
@@ -57,7 +57,7 @@ class PaymentRequestDetails(models.Model):
 
 class PaymentResponse(models.Model):
     id = models.UUIDField(db_column="Id", primary_key=True, default=uuid.uuid4)
-    payment_request_id = models.ForeignKey(
+    payment_request = models.ForeignKey(
         PaymentRequest, models.DO_NOTHING, db_column="PaymentRequestId", blank=True, null=True)
     gateway_msg_id = models.CharField(
         db_column="GatewayMsgId", blank=True, null=True, max_length=50)
@@ -80,7 +80,7 @@ class PaymentResponse(models.Model):
 
 class PaymentResponseDetails(models.Model):
     id = models.UUIDField(db_column="Id", primary_key=True, default=uuid.uuid4)
-    response_id = models.ForeignKey(
+    response = models.ForeignKey(
         PaymentResponse, models.DO_NOTHING, db_column="ResponseId", blank=True, null=True)
     gateway_msg_id = models.CharField(
         db_column="GatewayMsgId", blank=True, null=True, max_length=50)

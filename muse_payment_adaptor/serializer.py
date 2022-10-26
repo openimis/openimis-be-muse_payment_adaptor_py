@@ -1,10 +1,11 @@
-from muse_payment_adaptor.models import PaymentRequest, PaymentRequestDetails
+from importlib.metadata import requires
+from muse_payment_adaptor.models import PaymentRequest, PaymentRequestDetails, PaymentResponse, PaymentResponseDetails
 from rest_framework import serializers
-from django.core import serializers as json_serializer
 
 
 class MessageHeader(serializers.Serializer):
     msgId = serializers.CharField(max_length=50, source="message_id")
+    messageType = serializers.CharField(max_length=50)
     paymentType = serializers.CharField(max_length=50, source="payment_type")
 
 
@@ -54,13 +55,57 @@ class PaymentRequestSerializer(serializers.Serializer):
         request.payment_date = summary["payment_date"]
         request.payment_description = summary["payment_description"]
 
-        # payment_data = json_serializer.serialize('json', [request])
-        # payment = PaymentRequest.objects.create(**payment_data)
-
         request.save()
 
         for payee in pay_list:
             PaymentRequestDetails.objects.create(
-                payment_request_id=request, **payee)
+                payment_request=request, **payee)
 
         return request
+
+
+class MessageSummary(serializers.Serializer):
+    orgMsgId = serializers.CharField(max_length=50)
+    status = serializers.CharField(max_length=50)
+    statusDesc = serializers.CharField(max_length=200)
+
+
+class BPPayList(serializers.Serializer):
+    payeeCode = serializers.CharField(max_length=10, source="payee_code")
+    endtoEndid = serializers.CharField(max_length=30, source="end_to_end")
+
+
+class BulkPaymentSubmissionResponseMessage(serializers.Serializer):
+    messageHeader = MessageHeader()
+    messageSummary = MessageSummary()
+    bPPaylist = serializers.ListField(child=BPPayList(), required=False)
+
+
+class BulkPaymentResponseSerializer(serializers.Serializer):
+    message = BulkPaymentSubmissionResponseMessage()
+
+    def create(self, validated_data):
+        header = validated_data["message"]["messageHeader"]
+        summary = validated_data["message"]["messageSummary"]
+        pay_list = {}
+        if "bPPaylist" in validated_data["message"]:
+            pay_list = validated_data["message"]["bPPaylist"]
+
+        paymentRequest = PaymentRequest.objects.get(
+            message_id=summary["orgMsgId"])
+
+        response = PaymentResponse()
+        response.payment_request = paymentRequest
+        response.gateway_msg_id = header["message_id"]
+        response.message_type = header["messageType"]
+        response.payment_type = header["payment_type"]
+        response.status = summary["status"]
+        response.status_description = summary["statusDesc"]
+
+        response.save()
+
+        for payeeList in pay_list:
+            PaymentResponseDetails.objects.create(
+                response=response, **payeeList)
+
+        return response
