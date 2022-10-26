@@ -109,3 +109,40 @@ class BulkPaymentResponseSerializer(serializers.Serializer):
                 response=response, **payeeList)
 
         return response
+
+
+class PaymentSettlementMessageSummary(serializers.Serializer):
+    createdAt = serializers.DateTimeField(source="settlement_date")
+
+
+class PaymentSettlmentDetails(serializers.Serializer):
+    orgReferenceNo = serializers.CharField(max_length=10, source="payee_code")
+    overallStatus = serializers.CharField(max_length=20, source="status")
+    overallStatusDesc = serializers.CharField(
+        max_length=200, source="status_description")
+    voucherNo = serializers.CharField(max_length=50, source="end_to_end")
+
+
+class PaymentSettlementMessage(serializers.Serializer):
+    messageHeader = MessageHeader()
+    messageSummary = PaymentSettlementMessageSummary()
+    settlementDetail = PaymentSettlmentDetails()
+
+
+class PaymentSettlementSerializer(serializers.Serializer):
+    message = PaymentSettlementMessage()
+
+    def update(self, instance, validated_data):
+        header = validated_data["message"]["messageHeader"]
+        summary = validated_data["message"]["messageSummary"]
+        settlement = validated_data["message"]["settlementDetail"]
+
+        instance.settlement_msg_id = header.get(
+            "message_id", instance.settlement_msg_id)
+        instance.settlement_date = summary.get(
+            "settlement_date", instance.settlement_date)
+        instance.status = settlement.get("status", instance.status)
+        instance.status_description = settlement.get(
+            "status_description", instance.status_description)
+        instance.save()
+        return instance

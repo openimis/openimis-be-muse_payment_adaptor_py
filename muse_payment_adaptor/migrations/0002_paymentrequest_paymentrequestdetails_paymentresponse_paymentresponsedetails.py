@@ -73,8 +73,8 @@ class Migration(migrations.Migration):
                  default=uuid.uuid4, primary_key=True, serialize=False)),
                 ('response', models.ForeignKey(blank=True, db_column='ResponseId', null=True,
                  on_delete=django.db.models.deletion.DO_NOTHING, to='muse_payment_adaptor.paymentresponse')),
-                ('gateway_msg_id', models.CharField(blank=True,
-                 db_column='GatewayMsgId', max_length=50, null=True)),
+                ('settlement_msg_id', models.CharField(blank=True,
+                 db_column='SettlementMsgId', max_length=50, null=True)),
                 ('payee_code', models.CharField(blank=True,
                  db_column='PayeeCode', max_length=10, null=True)),
                 ('end_to_end', models.CharField(blank=True,
@@ -83,6 +83,8 @@ class Migration(migrations.Migration):
                  db_column='Status', max_length=20, null=True)),
                 ('status_description', models.CharField(blank=True,
                  db_column='StatusDescription', max_length=200, null=True)),
+                ('settlement_date', models.DateTimeField(
+                    db_column='SettlementDate', null=True, blank=True)),
                 ('record_date', models.DateTimeField(
                     auto_now=True, db_column='RecordDate')),
             ],

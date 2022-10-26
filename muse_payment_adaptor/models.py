@@ -82,8 +82,8 @@ class PaymentResponseDetails(models.Model):
     id = models.UUIDField(db_column="Id", primary_key=True, default=uuid.uuid4)
     response = models.ForeignKey(
         PaymentResponse, models.DO_NOTHING, db_column="ResponseId", blank=True, null=True)
-    gateway_msg_id = models.CharField(
-        db_column="GatewayMsgId", blank=True, null=True, max_length=50)
+    settlement_msg_id = models.CharField(
+        db_column="SettlementMsgId", blank=True, null=True, max_length=50)
     payee_code = models.CharField(
         db_column="PayeeCode", blank=True, null=True, max_length=10)
     end_to_end = models.CharField(
@@ -92,8 +92,10 @@ class PaymentResponseDetails(models.Model):
         db_column="Status", blank=True, null=True, max_length=20)
     status_description = models.CharField(
         db_column="StatusDescription", blank=True, null=True, max_length=200)
+    settlement_date = models.DateTimeField(
+        db_column="SettlementDate", blank=True, null=True)
     record_date = models.DateTimeField(
-        db_column="RecordDate", blank=False, null=False, auto_now=True)
+        db_column="RecordDate", blank=False, null=False, auto_now_add=True)
 
     class Meta:
         db_table = "PaymentResponseDetails"
