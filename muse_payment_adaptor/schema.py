@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, List, Dict
 
 import graphene
 from django.contrib.auth.models import AnonymousUser
@@ -44,21 +44,21 @@ class MuseHFMutationExtension:
     }
 
     @classmethod
-    def extend(cls, sender, **kwargs) -> list[dict[str, str]]:
+    def extend(cls, sender, **kwargs) -> List[Dict[str, str]]:
         return cls._extensions.get(sender._mutation_class, cls._empty_extension)(kwargs)
 
     @classmethod
-    def _empty_extension(cls, **kwargs) -> list[dict[str, str]]:
+    def _empty_extension(cls, **kwargs) -> List[Dict[str, str]]:
         return []
 
     @classmethod
-    def _after_create(cls, **kwargs) -> list[dict[str, str]]:
+    def _after_create(cls, **kwargs) -> List[Dict[str, str]]:
         if kwargs.get('error_messages', []):
             return cls._empty_extension()
 
         user = kwargs.get('user', None)
         hf_code = kwargs.get('data', {}).get('code', None)
-        bank_info = kwargs.get('data', {}).get('mutation_extensions', {}).get('bank_info', {})
+        bank_info = kwargs.get('data', {}).get('mutation_extensions', {}).get('bank_account_info', {})
 
         if bank_info:
             result = HFBankInformationService(user).create_bank_info_for_hf(code=hf_code, bank_info=bank_info)
@@ -67,13 +67,13 @@ class MuseHFMutationExtension:
             return cls._empty_extension()
 
     @classmethod
-    def _after_update(cls, **kwargs) -> list[dict[str, str]]:
+    def _after_update(cls, **kwargs) -> List[Dict[str, str]]:
         if kwargs.get('error_messages', []):
             return cls._empty_extension()
 
         user = kwargs.get('user', None)
         hf_uuid = kwargs.get('data', {}).get('uuid', None)
-        bank_info = kwargs.get('data', {}).get('mutation_extensions', {}).get('bank_info', {})
+        bank_info = kwargs.get('data', {}).get('mutation_extensions', {}).get('bank_account_info', {})
 
         if bank_info:
             result = HFBankInformationService(user).update_bank_info_for_hf(uuid=hf_uuid, bank_info=bank_info)
@@ -83,7 +83,7 @@ class MuseHFMutationExtension:
         return cls._parse_result(result)
 
     @classmethod
-    def _after_delete(cls, **kwargs) -> list[dict[str, str]]:
+    def _after_delete(cls, **kwargs) -> List[Dict[str, str]]:
         if kwargs.get('error_messages', []):
             return cls._empty_extension()
 
@@ -94,7 +94,7 @@ class MuseHFMutationExtension:
         return cls._parse_result(result)
 
     @classmethod
-    def _parse_result(cls, result: dict) -> list[dict[str, str]]:
+    def _parse_result(cls, result: dict) -> List[Dict[str, str]]:
         if result and not result.get('success', False):
             message = result.get("message", "Unknown")
             details = result.get("details", "No details")
