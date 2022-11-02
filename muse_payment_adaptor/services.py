@@ -32,7 +32,7 @@ class HFBankInformationService(BaseService):
     def create_bank_info_for_hf(self, **kwargs) -> dict:
         try:
             bank_info = self._get_bank_info(**kwargs)
-            hf = self._get_hf(**kwargs | {'validity_to': None})
+            hf = self._get_hf(**{'validity_to': None, **kwargs})
             bank_info['health_facility'] = hf
             return self.create(bank_info)
         except BaseException as exc:
@@ -42,7 +42,7 @@ class HFBankInformationService(BaseService):
     def update_bank_info_for_hf(self, **kwargs) -> dict:
         try:
             bank_info = self._get_bank_info(**kwargs)
-            hf = self._get_hf(**kwargs | {'validity_to': None})
+            hf = self._get_hf(**{'validity_to': None, **kwargs})
             queryset = HFBankInformation.objects.filter(health_facility=hf, is_deleted=False)
             if queryset:
                 bank_info_ = queryset.first()
@@ -50,7 +50,7 @@ class HFBankInformationService(BaseService):
                 data['id'] = bank_info_.uuid
                 return self.update(data)
             else:
-                return self.create_bank_info_for_hf(**(kwargs | {'hf': hf, "bank_info": bank_info}))
+                return self.create_bank_info_for_hf(**{'hf': hf, "bank_info": bank_info, **kwargs})
         except BaseException as exc:
             return output_exception(model_name=self.OBJECT_TYPE.__name__, method="update_bank_info_for_hf",
                                     exception=exc)
