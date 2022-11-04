@@ -1,8 +1,7 @@
 from django.test import TestCase
 
-from core import TimeUtils
 from core.models import User
-from muse_payment_adaptor.helpers.data import test_hf_data, test_hf_bank_info_data
+from muse_payment_adaptor.tests.helpers.hf_data import test_hf_data, test_hf_bank_info_data
 from muse_payment_adaptor.models import HFBankInformation
 from muse_payment_adaptor.services import HFBankInformationService
 
