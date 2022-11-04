@@ -1,3 +1,5 @@
+import logging
+
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -6,6 +8,8 @@ from muse_payment_adaptor.apps import MusePaymentAdaptorConfig
 
 __padding = padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH)
 __algorithm = hashes.SHA1()
+
+logger = logging.getLogger(__name__)
 
 
 def create_signature(message: bytes) -> bytes:
@@ -26,4 +30,5 @@ def verify_signature(message: bytes, signature: bytes) -> bool:
         )
         return True
     except InvalidSignature:
+        logger.debug("Signature validation failed")
         return False

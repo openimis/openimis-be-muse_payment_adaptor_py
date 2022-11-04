@@ -86,7 +86,6 @@ class MusePaymentAdaptorConfig(AppConfig):
             with open(path, 'rb') as f:
                 return f.read()
         except FileNotFoundError as e:
-            print(e)
             logger.error("Certificate from path %s not found.", path, exc_info=e)
         except IsADirectoryError as e:
             logger.error(

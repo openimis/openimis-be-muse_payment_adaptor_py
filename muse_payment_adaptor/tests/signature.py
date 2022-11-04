@@ -10,7 +10,6 @@ from muse_payment_adaptor.apps import MusePaymentAdaptorConfig
 
 
 class SignatureTests(TestCase):
-    pass
 
     @classmethod
     def setUpClass(cls):
