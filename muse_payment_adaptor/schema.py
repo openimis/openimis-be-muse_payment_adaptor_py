@@ -87,7 +87,8 @@ class MuseHFMutationExtension:
 
     @classmethod
     def extend(cls, sender, **kwargs) -> List[Dict[str, str]]:
-        return cls._extensions.get(sender._mutation_class, cls._empty_extension)(kwargs)
+        ext = cls._extensions.get(sender._mutation_class, None)
+        return ext(kwargs) if ext is not None else []
 
     @classmethod
     def _empty_extension(cls, **kwargs) -> List[Dict[str, str]]:
