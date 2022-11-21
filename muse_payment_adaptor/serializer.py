@@ -1,6 +1,23 @@
-from importlib.metadata import requires
+import base64
+import json
+from copy import deepcopy
+
+from rest_framework.exceptions import ValidationError
+
+from muse_payment_adaptor.api_interface.signature import verify_signature_b64_string
 from muse_payment_adaptor.models import PaymentRequest, PaymentRequestDetails, PaymentResponse, PaymentResponseDetails
 from rest_framework import serializers
+
+
+def _validate_signature(message: dict) -> None:
+    msg = deepcopy(message)
+    if set(msg.keys()) != {'message', 'digitalSignature'}:
+        raise ValidationError('Message should contain keys: message, digitalSignature')
+    signature_b64 = msg.pop('digitalSignature', None)
+    if not signature_b64:
+        raise ValidationError('Missing signature')
+    if not verify_signature_b64_string(str.encode(json.dumps(msg)), signature_b64):
+        raise ValidationError('Invalid signature')
 
 
 class MessageHeader(serializers.Serializer):
@@ -40,6 +57,7 @@ class BulkPaymentMessage(serializers.Serializer):
 
 class PaymentRequestSerializer(serializers.Serializer):
     message = BulkPaymentMessage()
+    digitalSignature = serializers.CharField()
 
     def create(self, validated_data):
         header = validated_data["message"]["messageHeader"]
@@ -63,6 +81,10 @@ class PaymentRequestSerializer(serializers.Serializer):
 
         return request
 
+    def validate(self, data):
+        _validate_signature(data)
+        return data
+
 
 class MessageSummary(serializers.Serializer):
     orgMsgId = serializers.CharField(max_length=50)
@@ -83,6 +105,7 @@ class BulkPaymentSubmissionResponseMessage(serializers.Serializer):
 
 class BulkPaymentResponseSerializer(serializers.Serializer):
     message = BulkPaymentSubmissionResponseMessage()
+    digitalSignature = serializers.CharField()
 
     def create(self, validated_data):
         header = validated_data["message"]["messageHeader"]
@@ -110,6 +133,14 @@ class BulkPaymentResponseSerializer(serializers.Serializer):
 
         return response
 
+    def validate(self, data):
+        # Check that start is before finish.
+        if data['start'] > data['finish']:
+            raise serializers.ValidationError("finish must occur after start")
+
+        _validate_signature(data)
+        return data
+
 
 class PaymentSettlementMessageSummary(serializers.Serializer):
     createdAt = serializers.DateTimeField(source="settlement_date")
@@ -131,6 +162,7 @@ class PaymentSettlementMessage(serializers.Serializer):
 
 class PaymentSettlementSerializer(serializers.Serializer):
     message = PaymentSettlementMessage()
+    digitalSignature = serializers.CharField()
 
     def update(self, instance, validated_data):
         header = validated_data["message"]["messageHeader"]
@@ -146,3 +178,7 @@ class PaymentSettlementSerializer(serializers.Serializer):
             "status_description", instance.status_description)
         instance.save()
         return instance
+
+    def validate(self, data):
+        _validate_signature(data)
+        return data

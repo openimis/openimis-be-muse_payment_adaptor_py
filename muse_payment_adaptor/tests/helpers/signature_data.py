@@ -1,4 +1,4 @@
-import struct
+
 from base64 import b64decode
 
 from cryptography.hazmat.primitives.serialization.pkcs12 import load_pkcs12

@@ -1,6 +1,5 @@
 from . import views
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 
 urlpatterns = [
     path('bulkpayment', views.make_bulk_payment, name='bulkpayment'),
