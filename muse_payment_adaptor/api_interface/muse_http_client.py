@@ -15,20 +15,20 @@ class MuseAdaptorHttpClient:
     Http client to be used for muse http requests
     """
 
-    def __init__(self, url: str):
+    def __init__(self, root_url: str):
         """
-        :param url: Root url for all request from this client
+        :param root_url: Root url for all request from this client
         """
-        self.url = url
+        self.root_url = root_url
 
-    def send_post_request(self, path: str, body: Any) -> Response:
+    def send_post_request(self, endpoint_url: str, body: Any) -> Response:
         """
         Send POST request to the endpoint with a given data.
 
-        :param path: Endpoint to send the data to. Will be joined with url provided in constructor
+        :param endpoint_url: Endpoint to send the data to. Will be joined with url provided in constructor
         :param body: Body arguments for POST request
         """
-        url = self._build_url(path)
+        url = self._build_url(endpoint_url)
         try:
             return requests.post(url=url, data=body, headers=self._build_headers())
         except requests.exceptions.RequestException as e:
@@ -37,8 +37,12 @@ class MuseAdaptorHttpClient:
     def _build_headers(self) -> dict:
         return MusePaymentAdaptorConfig.muse_request_headers
 
-    def _build_url(self, uri, query_params=None) -> str:
-        url = urljoin(self.url, uri)
+    def _build_url(self, endpoint_url, query_params=None) -> str:
+        url = urljoin(self.root_url, endpoint_url)
         if query_params:
             url.query = urlencode(query_params)
         return url.geturl()
+
+    @staticmethod
+    def get_default():
+        return MuseAdaptorHttpClient(MusePaymentAdaptorConfig.muse_base_uri)

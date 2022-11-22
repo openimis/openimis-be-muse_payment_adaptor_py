@@ -1,7 +1,7 @@
 import json
 import logging
-from abc import ABC
-from typing import List, Tuple, Union
+from abc import ABC, abstractmethod
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -15,62 +15,66 @@ from muse_payment_adaptor.apps import MusePaymentAdaptorConfig
 from muse_payment_adaptor.models import PaymentRequest, PaymentRequestDetails
 
 logger = logging.getLogger(__name__)
-_default_http_client = MuseAdaptorHttpClient(MusePaymentAdaptorConfig.muse_base_uri)
 
-
-# region ABC
 
 class MuseApiClient(ABC):
-    def __init__(self, api_http_client: MuseAdaptorHttpClient = _default_http_client):
+    def __init__(self, api_http_client: MuseAdaptorHttpClient = MuseAdaptorHttpClient.get_default()):
         self.api_http_client = api_http_client
 
     @property
+    @abstractmethod
     def _api_endpoint(self) -> str:
         """
         This property specifies the exact endpoint to be used by the client. The endpoint will be joined with root path
         from the MuseAdaptorHttpClient.
         """
-        raise NotImplementedError("`api_endpoint` not implemented")
 
-    def _submit(self, model: BaseModel) -> str:
+    def _submit(self, model: BaseModel) -> Optional[str]:
         response = self.api_http_client.send_post_request(self._api_endpoint, model.json())
-        if response.ok:
-            return response.content.decode('utf-8')
-        else:
-            logger.error(f"Muse request failed, HTTP code {response.status_code}")
+        if response:
+            if response.ok:
+                return response.content.decode('utf-8')
+            else:
+                logger.error(f"Muse request failed, HTTP code %s", response.status_code)
+                if response.content:
+                    logger.error(f"Response content %s", response.content.decode('utf-8'))
 
     def _build_message_signature(self, message: BaseModel) -> str:
         # To JSON, To UTF-8 bytes
         encoded_msg = json.dumps({'message': message.dict()}).encode('utf-8')
-        # Create signature, To b64 bytes, To b64 string (ascii)
+        # Create signature bytes, To b64 bytes, To b64 string (ascii)
         signature_str = create_signature_b64_string(encoded_msg)
         return signature_str
 
 
-# endregion
-# region BP
-
 class BulkPaymentSubmissionClient(MuseApiClient):
     _api_endpoint = MusePaymentAdaptorConfig.muse_post_bp_endpoint
 
-    def submit_bulky_payment(self, bill: Bill, payment_desc: str = '') \
-            -> Union[Tuple[PaymentRequest, str], Tuple[None, None]]:
+    def submit_bulky_payment(self, bill: Bill, payment_desc: str = '') -> Optional[str]:
         """
         Submit Bill as bulky payment to MUSE Api. This method will send the submission and save the request in the
         database.
 
         :param bill: Bill to be submitted
         :param payment_desc: Payment description to be included with the submission
-        :return: tuple of PaymentRequest database model and response content, if the request is successful
+        :return: response content, if the request is successful
         """
         try:
             request = self._build_request(bill, payment_desc)
-            request_model = self._store_request(request)
+            self._store_request(request)
             # TODO update model after submit?
-            return request_model, self._submit(request)
+            return self._submit(request)
         except BaseException as e:
             logger.error("Error while sending MUSE request", exc_info=e)
-            return None, None
+            return None
+
+    def _build_request(self, bill: Bill, description: str) -> BulkyPaymentSubmissionRequest:
+        message = self._build_request_message(bill, description)
+        signature = self._build_message_signature(message)
+        return BulkyPaymentSubmissionRequest(
+            message=message,
+            digitalSignature=signature
+        )
 
     def _build_request_message(self, bill: Bill, description: str) -> BulkyPaymentSubmissionRequestMessage:
         message_header = self._build_request_message_header(bill)
@@ -80,14 +84,6 @@ class BulkPaymentSubmissionClient(MuseApiClient):
             messageHeader=message_header,
             paymentSummary=message_content,
             payList=pay_list,
-        )
-
-    def _build_request(self, bill: Bill, description: str) -> BulkyPaymentSubmissionRequest:
-        message = self._build_request_message(bill, description)
-        signature = self._build_message_signature(message)
-        return BulkyPaymentSubmissionRequest(
-            message=message,
-            digitalSignature=signature
         )
 
     def _build_request_message_header(self, bill: Bill) -> BulkyPaymentMessageHeader:
@@ -105,7 +101,7 @@ class BulkPaymentSubmissionClient(MuseApiClient):
             totalAmount=bill.amount_net,
             referenceNo=str(bill.uuid),
             paymentDesc=description,
-            applyDate=str(datetime.now()),
+            applyDate=datetime.now().isoformat(),
             noofTransaction=bill.line_items_bill.count(),
             isSTP=False,
         )
@@ -154,5 +150,3 @@ class BulkPaymentSubmissionClient(MuseApiClient):
             })
 
         return request_model
-
-# endregion

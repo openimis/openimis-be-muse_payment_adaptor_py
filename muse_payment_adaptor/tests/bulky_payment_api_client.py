@@ -9,6 +9,7 @@ from django.test import TestCase
 
 from muse_payment_adaptor.api_interface.signature import verify_signature_b64_string
 from muse_payment_adaptor.apps import MusePaymentAdaptorConfig
+from muse_payment_adaptor.models import PaymentRequest
 from muse_payment_adaptor.tests.helpers.signature_data import test_certificate
 
 imis_modules = openimis_apps()
@@ -57,7 +58,8 @@ class BulkyPaymentApiClientTests(TestCase):
     @patch.object(MusePaymentAdaptorConfig, 'certificate', new=test_certificate)
     def test_generate_payment_request_model(self):
         bill = self._get_bill()
-        payment_request, _ = self.api_client.submit_bulky_payment(bill, 'test_description')
+        self.api_client.submit_bulky_payment(bill, 'test_description')
+        payment_request = PaymentRequest.objects.filter(message_id=str(bill.uuid)).first()
         self.assertTrue(payment_request)
 
     @patch.object(MusePaymentAdaptorConfig, 'certificate', new=test_certificate)
