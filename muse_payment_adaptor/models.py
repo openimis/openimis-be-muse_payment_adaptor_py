@@ -1,6 +1,5 @@
 from core.models import HistoryBusinessModel
 from location.models import HealthFacility
-from pyexpat import model
 import uuid
 from django.db import models
 

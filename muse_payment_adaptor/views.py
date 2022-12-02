@@ -1,5 +1,4 @@
-from muse_payment_adaptor import serializer
-from muse_payment_adaptor.models import PaymentRequestDetails, PaymentResponseDetails
+from muse_payment_adaptor.models import PaymentResponseDetails
 from muse_payment_adaptor.serializer import BulkPaymentResponseSerializer, PaymentRequestSerializer, PaymentSettlementSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response

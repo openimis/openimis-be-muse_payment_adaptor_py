@@ -7,6 +7,19 @@ from django.apps import AppConfig
 from django.utils.functional import classproperty
 
 DEFAULT_CONFIG = {
+    'muse_base_uri': 'http://<FBIP>:<port>',  # TODO: Enter MUSE API root
+    'muse_post_bp_endpoint': 'api/MUSE/postbulky',
+    'muse_request_headers': {
+        'content-type': 'application/json',
+        'MUSE-Com': 'default.sp.in',
+        'Institution Code': 'IMIS',
+        'service-code': 'SRVC044'  # TODO: Remove, for test instance only
+    },
+    'muse_api_sender': 'IMIS',
+    'muse_api_receiver': 'MUSE',
+    'muse_bp_header_message_type': 'Bulk payment posting',
+    'muse_bp_header_payment_type': 'Bulk payment',
+    'muse_bp_message_institution_code': '<institution_code>',  # TODO: To be defined
     'certificates_path': 'certificates',  # Relative path from `openimis-be` where certificates are stored
     'certificate_name': 'certificate.pfx',  # Filename, relative path from certificates_path directory
     'certificate_password': str.encode('<certificate_password>'),
@@ -22,6 +35,17 @@ logger = logging.getLogger(__name__)
 
 class MusePaymentAdaptorConfig(AppConfig):
     name = 'muse_payment_adaptor'
+
+    muse_base_uri = None
+    muse_post_bp_endpoint = None
+    muse_request_headers = None
+
+    muse_api_sender = None
+    muse_api_receiver = None
+
+    muse_bp_header_message_type = None
+    muse_bp_header_payment_type = None
+    muse_bp_message_institution_code = None
 
     certificates_path = None
     certificate_name = None

@@ -24,6 +24,7 @@ setup(
         'django-db-signals',
         'djangorestframework',
         'openimis-be-core'
+        'pydantic'
     ],
     classifiers=[
         'Environment :: Web Environment',
