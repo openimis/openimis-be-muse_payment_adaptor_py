@@ -25,3 +25,6 @@ class HFBankInformationGQLType(DjangoObjectType):
             "version": ["exact"],
         }
         connection_class = ExtendedConnection
+class MnoGQLType(graphene.ObjectType):
+    code = graphene.String()
+    display = graphene.String()

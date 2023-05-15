@@ -8,11 +8,12 @@ from django.utils.translation import ugettext as _
 from django.db.models import Q
 from graphene_django.filter import DjangoFilterConnectionField
 
+from core.apps import CoreConfig
 from core.schema import signal_mutation_module_after_mutating, OpenIMISMutation
 from invoice.apps import InvoiceConfig
 from invoice.models import Bill
 from muse_payment_adaptor.apps import MusePaymentAdaptorConfig
-from muse_payment_adaptor.gql_queries import HFBankInformationGQLType
+from muse_payment_adaptor.gql_queries import HFBankInformationGQLType, MnoGQLType
 from muse_payment_adaptor.models import HFBankInformation
 from muse_payment_adaptor.services import HFBankInformationService
 import graphene_django_optimizer as gql_optimizer
@@ -22,7 +23,10 @@ logger = logging.getLogger(__name__)
 
 class Query(graphene.ObjectType):
     hf_bank_information = DjangoFilterConnectionField(HFBankInformationGQLType)
+    mno_list = graphene.List(MnoGQLType)
 
+    def resolve_mno_list(self, info):
+        return CoreConfig.mno_list
     def resolve_hf_bank_information(self, info, **kwargs):
         filters = []
 

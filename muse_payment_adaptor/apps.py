@@ -28,6 +28,14 @@ DEFAULT_CONFIG = {
     'gql_hf_bank_info_create_perms': [],
     'gql_hf_bank_info_update_perms': [],
     'gql_hf_bank_info_delete_perms': [],
+    "mno_list": [
+        {"code":"TIGO","display":"TIGO PESA"},
+        {"code":"MPESA","display":"M-PESA"},
+        {"code":"AIRTEL","display":"AIRTEL MONEY"},
+        {"code":"HALOTEL","display":"HALO PESA"},
+        {"code":"ZANTEL","display":"EASY PESA"},
+        {"code":"TTCL","display":"T-PESA"}
+        ],
 }
 
 logger = logging.getLogger(__name__)
@@ -56,7 +64,7 @@ class MusePaymentAdaptorConfig(AppConfig):
     gql_hf_bank_info_create_perms = None
     gql_hf_bank_info_update_perms = None
     gql_hf_bank_info_delete_perms = None
-
+    mno_list = []
     __certificate = None
 
     @classproperty
@@ -81,6 +89,7 @@ class MusePaymentAdaptorConfig(AppConfig):
             CoreConfig.fields_controls_eo['phone'] = 'M'
 
         cfg = ModuleConfiguration.get_or_default(self.name, DEFAULT_CONFIG)
+        CoreConfig.mno_list = cfg["mno_list"]
         self.__load_config(cfg)
 
     @classmethod
